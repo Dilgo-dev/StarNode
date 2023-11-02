@@ -1,1 +1,2 @@
-# StarNode
+# ⭐️STARNODE⭐️
+StarNode est un framework Node.js open source qui vous permet de créer des API web performantes et extensibles en utilisant TypeScript. Avec une architecture optimisée, une vérification statique des types et un ensemble de fonctionnalités avancées, StarNode simplifie le développement d'applications web modernes. Créez rapidement des routes, ajoutez des middlewares, et profitez de la puissance de Node.js dans un cadre fiable. Étoffez votre projet avec StarNode et atteignez de nouvelles hauteurs.
