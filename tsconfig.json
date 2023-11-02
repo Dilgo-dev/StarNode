@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+      "target": "ES2018",              // Niveau cible d'ECMAScript (modifiez si nécessaire)
+      "module": "ESNext",              // Utilisation des modules ECMAScript (ES modules)
+      "lib": ["ESNext", "DOM"],        // Sélectionnez les bibliothèques de base nécessaires
+      "declaration": true,             // Génère des fichiers .d.ts pour votre bibliothèque
+      "outDir": "./dist",              // Répertoire de sortie pour les fichiers compilés
+      "strict": true,                  // Active des vérifications strictes (fortement recommandé)
+      "esModuleInterop": true,         // Permet d'importer des modules CommonJS dans ES modules
+      "skipLibCheck": true,            // Pour accélérer la vérification des déclarations de type
+      "forceConsistentCasingInFileNames": true,  // Assure une casse cohérente des fichiers
+    },
+    "include": ["src/**/*.ts"],        // Les fichiers source à compiler (ajustez le chemin)
+    "exclude": ["node_modules"]        // Les fichiers à exclure de la compilation
+  }
