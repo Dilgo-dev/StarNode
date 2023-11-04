@@ -11,30 +11,51 @@ type Callback = (req: Request, res: Response) => any;
 type TypeRequest = 'GET' | 'POST';
 
 type SNode = {
-    [key: string]: [Callback, TypeRequest]
-};
-interface Route {
-    type: string,
-    callback: Callback;
+    [key: string]: Callback;
 }
 
+type SNodes = {
+    [key in TypeRequest]: SNode;
+};
 export class Request {
     req: RequestHttp;
     headers: http.IncomingHttpHeaders;
-    body: any;
+    body: Promise<any>;
 
     constructor(req: RequestHttp) {
         this.req = req;
         this.headers = req.headers;
-        switch (this.headers['content-type']) {
-            case 'application/json': 
-                req.on('data', (chunk) => {
-                    this.body = JSON.parse(chunk);
-                });
-                break; 
-            default:
-                break;
-        }
+        this.body = this.processRequestBody();
+    }
+
+    private processRequestBody(): Promise<any> {
+        return new Promise((resolve, reject) => {
+            let body = '';
+            switch (this.headers['content-type']) {
+                case 'application/json':
+                    this.req.on('data', (chunk: string) => {
+                        body += chunk;
+                    });
+                    this.req.on('end', () => {
+                        try {
+                            const parsedBody = JSON.parse(body);
+                            resolve(parsedBody);
+                        } catch (error) {
+                            console.error('Erreur lors de l\'analyse JSON :', error);
+                            console.error('Données brutes reçues :', body);
+                            reject(error);
+                        }
+                    });
+                    this.req.on('error', (error: string) => {
+                        console.error('Erreur lors de la réception des données :', error);
+                        reject(error);
+                    });
+                    break;
+                default:
+                    resolve(body);
+                    break;
+            }
+        });
     }
 }
 export class Response {
@@ -68,15 +89,18 @@ export class Response {
     }
 }
 
-export default class StarServer {
-    private routes: Map<string, Route> = new Map();
+type StarRoute = Map<string, Callback>;
 
-    constructor(routes: SNode) {
-        Object.keys(routes).forEach((route: string) => {
-            this.routes.set(route, {
-                type: routes[route][1],
-                callback: routes[route][0]
-            });
+export default class StarServer {
+    private routes: Map<TypeRequest, StarRoute> = new Map();
+
+    constructor(routes: SNodes) {
+        Object.keys(routes).forEach((type: string) => {
+            const routeMap: StarRoute = new Map();
+            Object.keys(routes[type as TypeRequest]).forEach((route: string) => { 
+                routeMap.set(route, routes[type as TypeRequest][route]);
+            })
+            this.routes.set(type as TypeRequest, routeMap);
         });
     };
 
@@ -86,15 +110,15 @@ export default class StarServer {
     }
 
     public listen(port: number, callback: () => any) {
-        const server = http.createServer((req, res) => {
+        const server = http.createServer(async (req, res) => {
+            if (!req.method) return this.err(res, 404, "No Method");
             if (!req.url) return this.err(res, 404, "No url");
-            console.log(req.url);
-            console.log(this.routes);
-            const route = this.routes.get(req.url);
-            console.log(route);
-            if (!route || route.type !== req.method) return this.err(res, 404, "Not Found");
+            const routeType = this.routes.get(req.method as TypeRequest);
+            if (!routeType) return this.err(res, 404, "No type matching the query");
+            const route = routeType.get(req.url);
+            if (!route) return this.err(res, 404, "Page not found");
+            const returnValue: any = await route(new Request(req), new Response(res));
 
-            const returnValue: any = route.callback(new Request(req), new Response(res));
             switch (typeof returnValue) {
                 case 'object':
                     new Response(res).json(returnValue);
