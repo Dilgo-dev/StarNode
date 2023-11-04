@@ -1,4 +1,7 @@
 import http from 'http'
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
 type ResponseHttp = http.ServerResponse<http.IncomingMessage> & {
     req: http.IncomingMessage;
@@ -71,7 +74,7 @@ export class Response {
         return this;
     }
 
-    public send(text: string) {
+    public html(text: string) {
         this.res.writeHead(this.statusCode, { 'Content-Type': 'text/html; charset=utf-8' })
         this.res.end(text);
         return;
@@ -82,6 +85,18 @@ export class Response {
             const jsonString: string = JSON.stringify(jsonObject);
             this.res.writeHead(this.statusCode, { 'Content-Type': 'application/json' })
             this.res.end(jsonString);
+        } catch (err) {
+            console.log(err);
+        }
+        return;
+    }
+
+    public file(path: string) {
+        const pathToFile = path.slice(0, 2) === "@/" ? join(dirname(fileURLToPath(import.meta.url)), path.slice(2, path.length)) : path;
+        try {
+            const fileContent: string = readFileSync(pathToFile).toString();
+            this.res.writeHead(this.statusCode, { 'Content-Type': 'text/html; charset=utf-8' })
+            this.res.end(fileContent);
         } catch (err) {
             console.log(err);
         }
@@ -110,21 +125,23 @@ export default class StarServer {
     }
 
     public listen(port: number, callback: () => any) {
-        const server = http.createServer(async (req, res) => {
-            if (!req.method) return this.err(res, 404, "No Method");
-            if (!req.url) return this.err(res, 404, "No url");
-            const routeType = this.routes.get(req.method as TypeRequest);
-            if (!routeType) return this.err(res, 404, "No type matching the query");
-            const route = routeType.get(req.url);
-            if (!route) return this.err(res, 404, "Page not found");
-            const returnValue: any = await route(new Request(req), new Response(res));
+        const server = http.createServer(async (requestHttp, responseHtpp) => {
+            if (!requestHttp.method) return this.err(responseHtpp, 404, "No Method");
+            if (!requestHttp.url) return this.err(responseHtpp, 404, "No url");
+            const routeType = this.routes.get(requestHttp.method as TypeRequest);
+            if (!routeType) return this.err(responseHtpp, 404, "No type matching the query");
+            const route = routeType.get(requestHttp.url);
+            if (!route) return this.err(responseHtpp, 404, "Page not found");
+            const request: Request = new Request(requestHttp);
+            const response: Response = new Response(responseHtpp);
+            const returnValue: any = await route(request, response);
 
             switch (typeof returnValue) {
                 case 'object':
-                    new Response(res).json(returnValue);
+                    response.json(returnValue);
                     break;
                 case 'string':
-                    new Response(res).send(returnValue);
+                    response.html(returnValue);
                     break;
                 default:
                     break;
