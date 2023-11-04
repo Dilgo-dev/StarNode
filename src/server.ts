@@ -4,10 +4,10 @@ const port: number = 3000;
 const server: StarServer = new StarServer({
     'GET' : {
         '/': (req: Request, res: Response) => {
-            return res.send("<h1>✨ New node system ! ✨</h1>");
+            return res.file('@/../src/index.html');
         },
         '/api': (req: Request, res: Response) => {
-            return res.send("<h1>🧙 New node system api ! 🧙</h1>");
+            return "<h1>🧙 New node system api ! 🧙</h1>";
         },
     },
     'POST': {
