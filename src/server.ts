@@ -1,26 +1,31 @@
-import StarNode, { Response, Request } from "./starnode.js";
+import StarServer, { Response, Request } from "./starnode.js";
 
-const app: StarNode = new StarNode();
+//const server: StarServer = new StarServer({
+    //'/': [(req: Request, res: Response) => {
+        //return res.send("<h1>✨ New node system ! ✨</h1>");
+    //}, 'GET'],
+    //'/api': [(req: Request, res: Response) => {
+        //return "Yes";
+    //}, 'POST'],
+//});
+
+const server: StarServer = new StarServer({
+    'GET' : {
+        '/': (req: Request, res: Response) => {
+            return res.send("<h1>✨ New node system ! ✨</h1>");
+        },
+        '/api': (req: Request, res: Response) => {
+            return res.send("<h1>🧙 New node system api ! 🧙</h1>");
+        },
+    },
+    'POST': {
+        '/api': (req: Request, res: Response) => {
+            return { success: true, message : "🔮 Magic with star API ! 🔮" };
+        },
+    },
+});
 const port: number = 3000;
 
-function foo(res: Response, req: Request) {
-    console.log("YES");
-    res.send("YES");
-}
-
-const starRouter = {
-    '/': () => {
-
-    },
-};
-
-console.log(Object.keys(test));
-
-app.get("/", (_, res: Response) => {
-    console.log("OOOK");
-    return res.status(200).send("ok");
+server.listen(port, () => {
+    console.log(`⭐ http://localhost:${port}/ ⭐`);
 });
-
-app.listen(port, () => {
-    console.log(`WOOOOW WORKNG ON ${port}`);
-})
